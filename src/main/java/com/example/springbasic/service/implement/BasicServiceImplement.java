@@ -4,7 +4,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import com.example.springbasic.repository.SampleTable1Repository;
 import com.example.springbasic.service.BasicService;
+
+import lombok.RequiredArgsConstructor;
 
 // Service 레이어 :
 // - 실제 비즈니스 로직을 실행하는 영역
@@ -13,8 +16,11 @@ import com.example.springbasic.service.BasicService;
 // @Service : 해당 클래스를 Spring Bean으로 등록하는 어노테이션, @Component와 동일하지만 가독성 향상을 위해 Service 이름을 사용
 // @Component
 @Service
+@RequiredArgsConstructor
 public class BasicServiceImplement implements BasicService {
 
+    private final SampleTable1Repository sampleTable1Repository;
+    
     @Override
     public ResponseEntity<String> getService() {
         return ResponseEntity.status(HttpStatus.OK).body("서비스 호출");
