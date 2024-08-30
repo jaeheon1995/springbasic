@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SampleServiceImplement implements SampleService {
 
-    private final JwtProvider JwtProvider;
+    private final JwtProvider jwtProvider;
     private final SampleUserRepository sampleUserRepository;
     private final SampleTable1Repository sampleTable1Repository;
 
@@ -79,10 +79,13 @@ public class SampleServiceImplement implements SampleService {
 
     @Override
     public String getJwt(String name) {
-        String jwt = JwtProvider.create(name);
+        String jwt = jwtProvider.create(name);
         return jwt;
     }
 
-    
-    
+    @Override
+    public String validateJwt(String jwt) {
+        String subject = jwtProvider.validate(jwt);
+        return subject;
+    }
 }

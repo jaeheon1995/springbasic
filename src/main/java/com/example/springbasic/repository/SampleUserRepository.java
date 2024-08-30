@@ -64,4 +64,6 @@ extends JpaRepository<SampleUserEntity, String> {
         @Param("address") String address
     );
 
+    SampleUserEntity findByUserID(String userId);
+
 }
