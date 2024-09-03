@@ -13,7 +13,7 @@ import com.example.springbasic.entity.SampleUserEntity;
 public interface SampleUserRepository 
 extends JpaRepository<SampleUserEntity, String> {
     
-    // Query Method:
+   // Query Method:
     // - Repository의 메서드 선언시에 지정된 패턴에 따라 메서드명을 작성하면 JPA가 SQL을 만들어주는 방법
     // - findBy : 필드명을 기준으로 모든 컬럼을 조회할 때 사용, findBy 뒤에 필드명을 붙여서 작성, 필드명의 첫글자는 대문자이어야함
     List<SampleUserEntity> findByName(String name);
@@ -64,6 +64,8 @@ extends JpaRepository<SampleUserEntity, String> {
         @Param("address") String address
     );
 
-    SampleUserEntity findByUserID(String userId);
+
+
+    SampleUserEntity findByUserId(String userId);
 
 }
