@@ -3,7 +3,6 @@ package com.example.springbasic.config;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,13 +20,14 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.example.springbasic.filter.JwtAuthenticationFilter;
+import com.example.springbasic.handler.OAuth2SuccessHandler;
+import com.example.springbasic.service.implement.OAuth2UserServiceImplement;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
-@SpringBootApplication
 // Spring Web 보안 설정
 // @configurable:
 // - Spring bean으로 등록되지 않은 클래스에서 @Autowired를 사용할 수 있도록 하는 어노테이션
@@ -41,6 +41,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class WebSecurityConfig {
 
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2UserServiceImplement oAuth2UserSerivce;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     
     @Bean
@@ -49,7 +51,6 @@ public class WebSecurityConfig {
         // Class::method
         // - 메소드 참조, 특정 클래스의 메서드를 참조할 때 사용
         // - 매개변수로 메서드를 전달할 때 자주 사용
-
         security
             // Basic 인증 방식에 대한 설정
             // Basic 인증 방식 미사용으로 지정
@@ -86,18 +87,30 @@ public class WebSecurityConfig {
                 // permitAll(): 모든 클라이언트가 접근할 수 있도록 지정
                 // hasRole(권한): 특정 권한을 가진 클라이언트만 접근할 수 있도록 지정
                 // authenticated(): 인증된 모든 클라이언트가 접근할 수 있도록 지정
-                .requestMatchers("/anyone/**", "/auth/**").permitAll()
-                .requestMatchers(HttpMethod.GET,"/sample/jwt/*").permitAll()
+                .requestMatchers("/anyone/**", "/auth/**", "/oauth2/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/sample/jwt/*").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/sercive").hasRole("ADMIN")
+                .requestMatchers("/service").hasRole("ADMIN")
                 .requestMatchers("/user/**").authenticated()
                 // .requestMatchers(HttpMethod.GET).authenticated()
                 .requestMatchers(HttpMethod.POST, "/notice").hasRole("ADMIN")
                 // anyRequest(): requestMatchers로 지정한 메서드 혹은 URL이 아닌 모든 요청
                 .anyRequest().authenticated()
             )
-            .exceptionHandling(exceptionHandling->exceptionHandling
-            .authenticationEntryPoint(new FailedAuthenticationEntryPoint()))
+
+            // OAuth2 인증 처리
+            .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(endPoint -> endPoint.baseUri("/auth/sns"))
+                .redirectionEndpoint(endPoint -> endPoint.baseUri("/oauth2/callback/*"))
+                .userInfoEndpoint(endPoint -> endPoint.userService(oAuth2UserSerivce))
+                .successHandler(oAuth2SuccessHandler)
+            )
+            
+            // 인증 및 인가 과정에서 발생한 예외를 직접 처리
+            .exceptionHandling(exceptionHandling -> exceptionHandling
+                .authenticationEntryPoint(new FailedAuthenticationEntryPoint())
+            )
+
             // JwtAuthenticationFilter를 UsernamePasswordAuthenticationFilter 이전에 등록
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -122,16 +135,18 @@ public class WebSecurityConfig {
 
 }
 
-// 인증 및 인가 실패 처리를 위한 커스텀 예외(AuthenticationEntryPoint 인터페이스 구현)
-class FailedAuthenticationEntryPoint implements AuthenticationEntryPoint{
+// 인증 및 인가 실패 처리를 위한 커스텀 예외 (AuthenticationEntryPoint 인터페이스 구현)
+class FailedAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
+        
         authException.printStackTrace();
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        response.getWriter().write("{\"message\":\"인증 및 인가에 실패했습니다\"}");
+        response.getWriter().write("{\"message\": \"인증 및 인가에 실패했습니다.\"}");
+
     }
-    
+
 }

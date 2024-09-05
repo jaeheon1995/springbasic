@@ -119,6 +119,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Bearer qwdhukasjdfhajkd
         String token = authorization.substring(7);
         return token;
+
     }
     
 }
